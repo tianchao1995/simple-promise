@@ -7,9 +7,7 @@ var resovePromise = (
   reject: (reason?: any) => any
 ) => {
   if (promise2 === x) {
-    reject(
-      new TypeError('TypeError: Chaining cycle detected for promise #<Promise>')
-    )
+    reject(new TypeError('Chaining cycle detected for promise #<Promise>'))
   }
   if ((typeof x == 'object' && x !== null) || typeof x === 'function') {
     let then
@@ -25,7 +23,7 @@ var resovePromise = (
       then.call(
         x,
         (y: any) => {
-          resovePromise(promise2,y,resolve,reject)
+          resovePromise(promise2, y, resolve, reject)
         },
         (r: any) => {
           reject(r)
@@ -80,7 +78,11 @@ export class simgplePromise {
       reject(e)
     }
   }
-  then(onFulfilled?: (value?: any) => any, onRejected?: (reason?: any) => any) {
+  then(
+    onFulfilled: (value?: any) => any = value => value,
+    onRejected: (reason?: any) => any = reason =>
+      new simgplePromise((_, reject) => reject(reason))
+  ) {
     const fulfillIsFun: boolean = typeof onFulfilled === 'function'
     const rejectedIsFun: boolean = typeof onRejected === 'function'
     let x: any
@@ -111,8 +113,7 @@ export class simgplePromise {
         fulfillIsFun &&
           this.onFulfilledCbs.push(() => {
             try {
-              x =
-                onFulfilled!(this.value) &&
+              ;(x = onFulfilled!(this.value)) &&
                 resovePromise(promise2, x, resolve, reject)
             } catch (e) {
               reject(e)
@@ -121,8 +122,7 @@ export class simgplePromise {
         rejectedIsFun &&
           this.onRejectedCbs.push(() => {
             try {
-              x =
-                onRejected!(this.reason) &&
+              ;(x = onRejected!(this.reason)) &&
                 resovePromise(promise2, x, resolve, reject)
             } catch (e) {
               reject(e)
@@ -131,5 +131,8 @@ export class simgplePromise {
       }
     })
     return promise2
+  }
+  catch(onRejected?: (reason?: any) => any) {
+    return this.then(undefined, onRejected)
   }
 }

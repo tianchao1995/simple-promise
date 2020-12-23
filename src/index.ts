@@ -1,15 +1,13 @@
+
 import { simgplePromise } from './simple-promise'
 
 
 var p = new simgplePromise((resolve,reject)=>{
-  setTimeout(()=>{
-    resolve(1);
-  },2000)
+  reject(1)
+  throw new Error('aaa')
 })
-
-p.then((value)=>{
-  console.log('resolve',value)
-},(reason)=>{
-  console.log('reject',reason)
+p.then().then().then().then().then().then().then().then().then((value)=>{
+  console.log('success',value)
+}).catch().catch().catch().catch().catch((reason)=>{
+  console.log('error',reason)
 })
-console.log('同步')
