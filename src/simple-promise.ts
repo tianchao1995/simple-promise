@@ -175,12 +175,12 @@ export class simgplePromise implements Promise {
   }
 
   static resolve(value?:any):simgplePromise{
-    return new simgplePromise((resolve,reject)=>{
+    return new simgplePromise((resolve,_)=>{
       resolve(value);
     }) 
   }
   static reject(reason?:any):simgplePromise{
-    return new simgplePromise((resolve,reject)=>{
+    return new simgplePromise((_,reject)=>{
       reject(reason);
     }) 
   }
