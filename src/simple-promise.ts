@@ -110,7 +110,10 @@ export class simgplePromise implements Promise {
       reject(e)
     }
   }
-  then(onFulfilled?: thenFulfillExecutor, onRejected?: thenRejectExecutor):simgplePromise {
+  then(
+    onFulfilled?: thenFulfillExecutor,
+    onRejected?: thenRejectExecutor
+  ): simgplePromise {
     const fulfillIsFun: boolean = typeof onFulfilled === 'function'
     const rejectedIsFun: boolean = typeof onRejected === 'function'
 
@@ -170,21 +173,34 @@ export class simgplePromise implements Promise {
     return promise2
   }
 
-  catch(onRejected?: thenRejectExecutor):simgplePromise {
+  catch(onRejected?: thenRejectExecutor): simgplePromise {
     return this.then(undefined, onRejected)
   }
 
-  static resolve(value?:any):simgplePromise{
-    return new simgplePromise((resolve,_)=>{
-      resolve(value);
-    }) 
-  }
-  static reject(reason?:any):simgplePromise{
-    return new simgplePromise((_,reject)=>{
-      reject(reason);
-    }) 
+  finally(callback?: resolve) {
+    let _value = callback && callback()
+    return this.then(
+      value => {
+        return simgplePromise.resolve(_value).then(() => value)
+      },
+      reason => {
+        return simgplePromise.resolve(_value).then(() => {
+          throw reason
+        })
+      }
+    )
   }
 
+  static resolve(value?: any): simgplePromise {
+    return new simgplePromise((resolve, _) => {
+      resolve(value)
+    })
+  }
+  static reject(reason?: any): simgplePromise {
+    return new simgplePromise((_, reject) => {
+      reject(reason)
+    })
+  }
 }
 ;(<any>simgplePromise).defer = (<any>simgplePromise).deferred = function () {
   let dfd: any = {}

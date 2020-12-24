@@ -7,7 +7,7 @@ var obj = {
 }
 var d = new Promise((resolve:any,reject:any)=>{
   setTimeout(()=>{
-    resolve('ddddd')
+    reject(222)
   },2000)
 })
 var c = new Promise((resolve:any,reject:any)=>{
@@ -16,12 +16,29 @@ var c = new Promise((resolve:any,reject:any)=>{
   },1000)
 })
 var p = new Promise((resolve:any,reject:any)=>{
-  reject('error')
+  resolve('成功了')
 })
-p.then((v:any)=>{
-  console.log('success',v)
-},(err)=>{
-  console.log('error',err)
+Promise.reject(456).finally(()=>{
+  return new Promise((resolve,reject)=>{
+    setTimeout(() => {
+      reject(123)
+    }, 3000);
+  })
+}).then(data=>{
+  console.log(data,'success')
+}).catch(err=>{
+  console.log(err,'error')
+})
+simgplePromise.reject(456).finally(()=>{
+  return new simgplePromise((resolve,reject)=>{
+    setTimeout(() => {
+      reject(123)
+    }, 3000);
+  })
+}).then(data=>{
+  console.log(data,'success')
+}).catch(err=>{
+  console.log(err,'error')
 })
 // promisesAplusTests(simgplePromise,{ reporter: "dot" },(err:any)=>{
 //   console.log(err)
