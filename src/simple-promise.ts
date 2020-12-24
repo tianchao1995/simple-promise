@@ -110,7 +110,7 @@ export class simgplePromise implements Promise {
       reject(e)
     }
   }
-  then(onFulfilled?: thenFulfillExecutor, onRejected?: thenRejectExecutor) {
+  then(onFulfilled?: thenFulfillExecutor, onRejected?: thenRejectExecutor):simgplePromise {
     const fulfillIsFun: boolean = typeof onFulfilled === 'function'
     const rejectedIsFun: boolean = typeof onRejected === 'function'
 
@@ -170,8 +170,19 @@ export class simgplePromise implements Promise {
     return promise2
   }
 
-  catch(onRejected?: thenRejectExecutor) {
+  catch(onRejected?: thenRejectExecutor):simgplePromise {
     return this.then(undefined, onRejected)
+  }
+
+  static resolve(value?:any):simgplePromise{
+    return new simgplePromise((resolve,reject)=>{
+      resolve(value);
+    }) 
+  }
+  static reject(reason?:any):simgplePromise{
+    return new simgplePromise((resolve,reject)=>{
+      reject(reason);
+    }) 
   }
 
 }
