@@ -1,43 +1,61 @@
-import { status, PENDING, REJECTED, FULFILLED } from './type'
+import {
+  status,
+  PENDING,
+  REJECTED,
+  FULFILLED,
+  Promise,
+  resolve,
+  reject,
+  thenFulfillExecutor,
+  thenRejectExecutor
+} from './type'
 
 var resovePromise = (
   promise2: simgplePromise,
   x: any,
-  resolve: (value?: any) => any,
-  reject: (reason?: any) => any
+  resolve: resolve,
+  reject: reject
 ) => {
   if (promise2 === x) {
-    reject(new TypeError('Chaining cycle detected for promise #<Promise>'))
+    return reject(
+      new TypeError('Chaining cycle detected for promise #<Promise>')
+    )
   }
   if ((typeof x == 'object' && x !== null) || typeof x === 'function') {
-    let then
+    let called: boolean = false
     // 如果在取x.then值时抛出了异常，则以这个异常做为原因将promise拒绝
     try {
-      then = x.then
+      let then = x.then
+      // 大致判断promise对象
+      if (typeof then === 'function') {
+        // 以x为this调用then函数， 且第一个参数是resolvePromise，第二个参数是rejectPromise
+        then.call(
+          x,
+          (y: any) => {
+            if (called) return
+            called = true
+            resovePromise(promise2, y, resolve, reject)
+          },
+          (r: any) => {
+            if (called) return
+            called = true
+            reject(r)
+          }
+        )
+      } else {
+        resolve(x)
+      }
     } catch (e) {
+      if (called) return
+      called = true
       reject(e)
-    }
-    // 大致判断promise对象
-    if (typeof then === 'function') {
-      // 以x为this调用then函数， 且第一个参数是resolvePromise，第二个参数是rejectPromise
-      then.call(
-        x,
-        (y: any) => {
-          resovePromise(promise2, y, resolve, reject)
-        },
-        (r: any) => {
-          reject(r)
-        }
-      )
-    } else {
-      resolve(x)
     }
   } else {
     resolve(x)
   }
 }
 
-export class simgplePromise {
+export class simgplePromise implements Promise {
   status: status = PENDING
 
   value: any
@@ -48,20 +66,34 @@ export class simgplePromise {
 
   onRejectedCbs: Array<() => any> = []
 
-  constructor(
-    excutor: (
-      resolve: (value?: any) => any,
-      reject: (reason?: any) => any
-    ) => any
-  ) {
-    let resolve = (value?: any) => {
-      if (this.status === PENDING) {
-        this.status = FULFILLED
-        this.value = value
-        this.onFulfilledCbs.forEach(fn => fn())
+  constructor(excutor: (resolve: resolve, reject: reject) => any) {
+    let resolve: resolve = (value?: any) => {
+      let resolved = () => {
+        if (this.status === PENDING) {
+          this.status = FULFILLED
+          this.value = value
+          this.onFulfilledCbs.forEach(fn => fn())
+        }
       }
+      if (
+        (typeof value == 'object' && value !== null) ||
+        typeof value === 'function'
+      ) {
+        try {
+          let then = value.then
+          if (typeof then === 'function') {
+            value.then(resolve, reject)
+          } else {
+            resolved()
+          }
+        } catch (e) {
+          reject(e)
+        }
+        return
+      }
+      resolved()
     }
-    let reject = (reason?: any) => {
+    let reject: reject = (reason?: any) => {
       if (this.status === PENDING) {
         this.status = REJECTED
         this.reason = reason
@@ -78,22 +110,26 @@ export class simgplePromise {
       reject(e)
     }
   }
-  then(
-    onFulfilled: (value?: any) => any = value => value,
-    onRejected: (reason?: any) => any = reason =>
-      new simgplePromise((_, reject) => reject(reason))
-  ) {
+  then(onFulfilled?: thenFulfillExecutor, onRejected?: thenRejectExecutor) {
     const fulfillIsFun: boolean = typeof onFulfilled === 'function'
     const rejectedIsFun: boolean = typeof onRejected === 'function'
+
+    onFulfilled = fulfillIsFun ? onFulfilled : (value: any) => value
+
+    onRejected = rejectedIsFun
+      ? onRejected
+      : (reason: any) => {
+          throw reason
+        }
+
     let x: any
     let promise2 = new simgplePromise((resolve, reject) => {
       if (this.status === FULFILLED) {
         // onFulfilled or onRejected must not be called until the execution context stack contains only platform code.
         setTimeout(() => {
           try {
-            fulfillIsFun &&
-              (x = onFulfilled!(this.value)) &&
-              resovePromise(promise2, x, resolve, reject)
+            x = onFulfilled!(this.value)
+            resovePromise(promise2, x, resolve, reject)
           } catch (e) {
             reject(e)
           }
@@ -102,37 +138,48 @@ export class simgplePromise {
         // onFulfilled or onRejected must not be called until the execution context stack contains only platform code.
         setTimeout(() => {
           try {
-            rejectedIsFun &&
-              (x = onRejected!(this.reason)) &&
-              resovePromise(promise2, x, resolve, reject)
+            x = onRejected!(this.reason)
+            resovePromise(promise2, x, resolve, reject)
           } catch (e) {
             reject(e)
           }
         }, 0)
       } else if (this.status === PENDING) {
-        fulfillIsFun &&
-          this.onFulfilledCbs.push(() => {
+        this.onFulfilledCbs.push(() => {
+          setTimeout(() => {
             try {
-              ;(x = onFulfilled!(this.value)) &&
-                resovePromise(promise2, x, resolve, reject)
+              x = onFulfilled!(this.value)
+              resovePromise(promise2, x, resolve, reject)
             } catch (e) {
               reject(e)
             }
-          })
-        rejectedIsFun &&
-          this.onRejectedCbs.push(() => {
+          }, 0)
+        })
+        this.onRejectedCbs.push(() => {
+          setTimeout(() => {
             try {
-              ;(x = onRejected!(this.reason)) &&
-                resovePromise(promise2, x, resolve, reject)
+              x = onRejected!(this.reason)
+              resovePromise(promise2, x, resolve, reject)
             } catch (e) {
               reject(e)
             }
-          })
+          }, 0)
+        })
       }
     })
     return promise2
   }
-  catch(onRejected?: (reason?: any) => any) {
+
+  catch(onRejected?: thenRejectExecutor) {
     return this.then(undefined, onRejected)
   }
+
+}
+;(<any>simgplePromise).defer = (<any>simgplePromise).deferred = function () {
+  let dfd: any = {}
+  dfd.promise = new (<any>simgplePromise)((resolve: any, reject: any) => {
+    dfd.resolve = resolve
+    dfd.reject = reject
+  })
+  return dfd
 }
