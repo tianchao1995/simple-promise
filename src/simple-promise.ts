@@ -178,13 +178,12 @@ export class simgplePromise implements Promise {
   }
 
   finally(callback?: resolve) {
-    let _value = callback && callback()
     return this.then(
       value => {
-        return simgplePromise.resolve(_value).then(() => value)
+        return simgplePromise.resolve(callback && callback()).then(() => value)
       },
       reason => {
-        return simgplePromise.resolve(_value).then(() => {
+        return simgplePromise.resolve(callback && callback()).then(() => {
           throw reason
         })
       }
