@@ -200,6 +200,30 @@ export class simgplePromise implements Promise {
       reject(reason)
     })
   }
+
+  static all(promises: any[]): simgplePromise | TypeError {
+    if (!Array.isArray(promises)) {
+      const type = typeof promises
+      return new TypeError(`TypeError: ${type} ${promises} is not iterable`)
+    }
+    var values: any[] = [],
+      resolveCount = 0
+    return new simgplePromise((resolve, reject) => {
+      if (promises.length <= 0) {
+        resolve(values)
+      } else {
+        promises.forEach((p, index) => {
+          Promise.resolve(p).then(value => {
+            values[index] = value
+            resolveCount++
+            if (resolveCount === promises.length) {
+              resolve(values)
+            }
+          }, reject)
+        })
+      }
+    })
+  }
 }
 ;(<any>simgplePromise).defer = (<any>simgplePromise).deferred = function () {
   let dfd: any = {}

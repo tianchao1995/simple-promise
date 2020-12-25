@@ -7,38 +7,26 @@ var obj = {
 }
 var d = new Promise((resolve:any,reject:any)=>{
   setTimeout(()=>{
-    reject(222)
+    resolve(obj)
   },2000)
 })
 var c = new Promise((resolve:any,reject:any)=>{
   setTimeout(()=>{
-    resolve(obj)
+    resolve(d)
   },1000)
 })
 var p = new Promise((resolve:any,reject:any)=>{
   resolve('成功了')
 })
-Promise.reject(456).finally(()=>{
-  return new Promise((resolve,reject)=>{
-    setTimeout(() => {
-      reject(123)
-    }, 3000);
-  })
-}).then(data=>{
-  console.log(data,'success')
-}).catch(err=>{
-  console.log(err,'error')
-})
-simgplePromise.reject(456).finally(()=>{
-  return new simgplePromise((resolve,reject)=>{
-    setTimeout(() => {
-      reject(123)
-    }, 3000);
-  })
-}).then(data=>{
-  console.log(data,'success')
-}).catch(err=>{
-  console.log(err,'error')
+Promise.all([1,2,3,d,d,d,p,d,p,2222]).then((c)=>{
+  console.log(c)
+},(error)=>{
+  console.log('error1',error)
+});
+(<simgplePromise>simgplePromise.all([1,2,3,d,d,d,p,d,p,2222])).then((c)=>{
+  console.log(c)
+},(error)=>{
+  console.log('error2',error)
 })
 // promisesAplusTests(simgplePromise,{ reporter: "dot" },(err:any)=>{
 //   console.log(err)
