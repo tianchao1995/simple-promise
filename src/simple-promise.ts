@@ -10,8 +10,8 @@ import {
   thenRejectExecutor
 } from './type'
 
-
-const isIterable = (obj:any) => obj != null && typeof obj[Symbol.iterator] === 'function';
+const isIterable = (obj: any) =>
+  obj != null && typeof obj[Symbol.iterator] === 'function'
 
 var resovePromise = (
   promise2: simgplePromise,
@@ -113,11 +113,14 @@ export class simgplePromise implements Promise {
       reject(e)
     }
   }
+
   then(
     onFulfilled?: thenFulfillExecutor,
     onRejected?: thenRejectExecutor
   ): simgplePromise {
+
     const fulfillIsFun: boolean = typeof onFulfilled === 'function'
+
     const rejectedIsFun: boolean = typeof onRejected === 'function'
 
     onFulfilled = fulfillIsFun ? onFulfilled : (value: any) => value
@@ -129,6 +132,7 @@ export class simgplePromise implements Promise {
         }
 
     let x: any
+
     let promise2 = new simgplePromise((resolve, reject) => {
       if (this.status === FULFILLED) {
         // onFulfilled or onRejected must not be called until the execution context stack contains only platform code.
@@ -173,14 +177,18 @@ export class simgplePromise implements Promise {
         })
       }
     })
+    
     return promise2
   }
 
   catch(onRejected?: thenRejectExecutor): simgplePromise {
+
     return this.then(undefined, onRejected)
+
   }
 
-  finally(callback?: resolve) {
+  finally(callback?: resolve): simgplePromise {
+
     return this.then(
       value => {
         return simgplePromise.resolve(callback && callback()).then(() => value)
@@ -191,46 +199,59 @@ export class simgplePromise implements Promise {
         })
       }
     )
+
   }
 
   static resolve(value?: any): simgplePromise {
+
     return new simgplePromise((resolve, _) => {
       resolve(value)
     })
+    
   }
+
   static reject(reason?: any): simgplePromise {
+
     return new simgplePromise((_, reject) => {
       reject(reason)
     })
+
   }
 
-  static all(promises: Iterable<any>): simgplePromise {
+  static all(promises: Iterable<any>): simgplePromise | never {
+
     if (!isIterable(promises)) {
       const type = typeof promises
       throw new TypeError(`TypeError: ${type} ${promises} is not iterable`)
     }
-    let values: any[] = [];
-    let resolveCount = 0;
-    let index = -1;
+
+    let values: any[] = []
+
+    let resolveCount = 0
+
+    let index = -1
+
     return new simgplePromise((resolve, reject) => {
-      for (let p of promises){
-        index ++;
-        ~(function(_index:number){
+      for (let p of promises) {
+        index++
+        ~(function (_index: number) {
           Promise.resolve(p).then(value => {
             values[_index] = value
             resolveCount++
-            if (resolveCount === (index + 1)) {
+            if (resolveCount === index + 1) {
               resolve(values)
             }
           }, reject)
         })(index)
       }
-      if(index == -1){
+      if (index == -1) {
         resolve(values)
       }
     })
   }
 }
+
+//验证规范  promises-aplus-tests
 ;(<any>simgplePromise).defer = (<any>simgplePromise).deferred = function () {
   let dfd: any = {}
   dfd.promise = new (<any>simgplePromise)((resolve: any, reject: any) => {
