@@ -10,6 +10,9 @@ import {
   thenRejectExecutor
 } from './type'
 
+
+const isIterable = (obj:any) => obj != null && typeof obj[Symbol.iterator] === 'function';
+
 var resovePromise = (
   promise2: simgplePromise,
   x: any,
@@ -201,26 +204,29 @@ export class simgplePromise implements Promise {
     })
   }
 
-  static all(promises: any[]): simgplePromise | TypeError {
-    if (!Array.isArray(promises)) {
+  static all(promises: Iterable<any>): simgplePromise {
+    if (!isIterable(promises)) {
       const type = typeof promises
-      return new TypeError(`TypeError: ${type} ${promises} is not iterable`)
+      throw new TypeError(`TypeError: ${type} ${promises} is not iterable`)
     }
-    var values: any[] = [],
-      resolveCount = 0
+    let values: any[] = [];
+    let resolveCount = 0;
+    let index = -1;
     return new simgplePromise((resolve, reject) => {
-      if (promises.length <= 0) {
-        resolve(values)
-      } else {
-        promises.forEach((p, index) => {
+      for (let p of promises){
+        index ++;
+        ~(function(_index:number){
           Promise.resolve(p).then(value => {
-            values[index] = value
+            values[_index] = value
             resolveCount++
-            if (resolveCount === promises.length) {
+            if (resolveCount === (index + 1)) {
               resolve(values)
             }
           }, reject)
-        })
+        })(index)
+      }
+      if(index == -1){
+        resolve(values)
       }
     })
   }
