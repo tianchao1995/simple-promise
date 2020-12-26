@@ -249,6 +249,20 @@ export class simgplePromise implements Promise {
       }
     })
   }
+
+  static race(promises: Iterable<any>): simgplePromise | never {
+
+    if (!isIterable(promises)) {
+      const type = typeof promises
+      throw new TypeError(`TypeError: ${type} ${promises} is not iterable`)
+    }
+    return new simgplePromise((resolve, reject) => {
+      for (let p of promises) {
+        Promise.resolve(p).then(resolve, reject)
+      }
+    })
+  }
+
 }
 
 //验证规范  promises-aplus-tests
