@@ -274,3 +274,4 @@ export class simgplePromise implements Promise {
   })
   return dfd
 }
+console.log('main')
